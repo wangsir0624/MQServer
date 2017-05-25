@@ -1,0 +1,29 @@
+{
+  "name": "wangjian/mqserver",
+  "description": "PHP写的消息队列服务器",
+  "license": "MIT",
+  "keywords": ["MQ", "Message Queue"],
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "Wangjian",
+      "email": "1636801376@qq.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*"
+  }
+  "autoload": {
+    "psr-4": {
+      "Wangjian\\MQServer\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Wangjian\\MQServer\\Test\\": "test"
+    }
+  }
+}
