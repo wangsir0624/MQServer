@@ -29,6 +29,7 @@ class Queue implements QueueInterface, Countable {
     /**
      * add an item at the last position of the queue
      * @param mix $item
+     * @param bool $top  whether add the item at the top of the queue
      * @throws OutOfRangeException  adding an item to a full queue will throw an OutOfRangeException
      */
     public function inQueue($item, $top = false) {
