@@ -4,6 +4,7 @@ namespace Wangjian\MQServer\Connection;
 use Wangjian\MQServer\EventLoop\EventLoopInterface;
 use RuntimeException;
 use Wangjian\MQServer\Protocol\MQServerProtocol;
+use Wangjian\MQServer\Protocol\Processor;
 
 class Connection implements ConnectionInterface {
     /**
@@ -31,12 +32,6 @@ class Connection implements ConnectionInterface {
     public $recv_buffer_size = 1048576;
 
     /**
-     * the size of the current package
-     * @var int
-     */
-    private $current_package_size;
-
-    /**
      * constructor
      * @param ServerInterface $server
      */
@@ -45,14 +40,10 @@ class Connection implements ConnectionInterface {
         $this->stream = @stream_socket_accept($this->server->stream, $this->server->connectionTimeout, $peername);
 
         if(!$this->stream) {
-            if(is_callable($this->server->onError)) {
-                call_user_func($this->server->onError, $this, "create connection to $peername failed.");
-            }
-
             throw new RuntimeException('stream_socket_accept() failed');
         }
 
-        stream_set_read_buffer($this->stream, 0);
+        stream_set_read_buffer($this->stream, $this->recv_buffer_size);
     }
 
     /**
@@ -109,24 +100,9 @@ class Connection implements ConnectionInterface {
             $buffer = substr($this->recv_buffer, 0, $length);
             $this->recv_buffer = substr($this->recv_buffer, $length);
 
-            MQServerProtocol::decode($buffer, $this);
+            $command = MQServerProtocol::decode($buffer, $this);
+            $this->send(Processor::process($command, $this->server));
         }
-
-        /*$protocol = $this->server->protocol;
-
-        $this->current_package_size = $protocol::input($this->recv_buffer, $this);
-
-        if($this->current_package_size != 0) {
-            $buffer = substr($this->recv_buffer, 0, $this->current_package_size);
-            $this->recv_buffer = substr($this->recv_buffer, $this->current_package_size);
-            $this->current_package_size = 0;
-
-            $protocol::decode($buffer, $this);
-
-            if(!empty($this->recv_buffer)) {
-                call_user_func(array($this, 'handleMessage'));
-            }
-        }*/
     }
 
     /**
