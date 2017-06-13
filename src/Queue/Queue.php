@@ -37,9 +37,9 @@ class Queue implements QueueInterface, Countable {
             throw new OutOfRangeException('the queue is full');
         }
         if($top) {
-            array_unshift($this->items, serialize($item));
+            array_unshift($this->items, $item);
         } else {
-            array_push($this->items, serialize($item));
+            array_push($this->items, $item);
         }
     }
 
@@ -54,12 +54,7 @@ class Queue implements QueueInterface, Countable {
 
         $item = array_shift($this->items);
 
-        //unserialize the item
-        if(($us_item = @unserialize($item)) !== false) {
-            $item = $us_item;
-        }
-
-        return $us_item;
+        return $item;
     }
 
     /**
