@@ -25,12 +25,7 @@ class MQServerProtocol implements ProtocolInterface {
      * @return string  returns the encoded buffer
      */
     public static function encode($buffer, ConnectionInterface $connection) {
-        $length = strlen($buffer);
-        if(substr($buffer, $length-2) != "\r\n") {
-            $buffer .= "\r\n";
-        }
-
-        return $buffer;
+        return $buffer."\r\n";
     }
 
     /**

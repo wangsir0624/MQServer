@@ -31,6 +31,12 @@ class Connection implements ConnectionInterface {
      */
     public $recv_buffer_size = 1048576;
 
+    /*
+     * the receiving time of the last message
+     * @var int
+     */
+    public $last_time;
+
     /**
      * constructor
      * @param ServerInterface $server
@@ -43,7 +49,8 @@ class Connection implements ConnectionInterface {
             throw new RuntimeException('stream_socket_accept() failed');
         }
 
-        stream_set_read_buffer($this->stream, $this->recv_buffer_size);
+        $this->last_time = time();
+        stream_set_read_buffer($this->stream, 0);
     }
 
     /**
@@ -88,6 +95,8 @@ class Connection implements ConnectionInterface {
      * called when the connection receive the client data
      */
     public function handleMessage() {
+        $this->last_time = time();
+
         $buffer = fread($this->stream, $this->recv_buffer_size);
 
         if(!$buffer) {
