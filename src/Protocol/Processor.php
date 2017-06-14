@@ -60,19 +60,21 @@ class Processor {
                 }
             }
         } else if(substr($command, 0, 4) == 'out ') {
-            list(, $queue) = explode(' ', $command);
+            $queues = explode(' ', substr($command, 4));
 
-            $queue = $server->queues->getQueue($queue);
-            if(!$queue) {
-                return 'nodata';
-            } else {
-                try {
-                    $result = $queue->unQueue();
-                    return "data $result";
-                } catch (\UnderflowException $e) {
-                    return 'nodata';
+            foreach($queues as $queue) {
+                $queue = $server->queues->getQueue($queue);
+                if($queue) {
+                    try {
+                        $result = $queue->unQueue();
+                        return "data $result";
+                    } catch (\UnderflowException $e) {
+                        continue;
+                    }
                 }
             }
+
+            return 'nodata';
         } else {
             return 'wrong';
         }
