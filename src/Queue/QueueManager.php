@@ -14,7 +14,7 @@ class QueueManager implements Countable {
      * the queues array
      * @var array
      */
-    protected $queues = array();
+    public $queues = array();
 
     /**
      * QueueManager constructor.

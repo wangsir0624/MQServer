@@ -8,9 +8,15 @@ class Processor {
      * process the command
      * @param string $command
      * @param Server $server
+     * @param bool $write_log  whether write the command to the log file
      * @return string  returns the response
      */
-    public static function process($command, Server $server) {
+    public static function process($command, Server $server, $write_log = true) {
+        //write the command to the log file
+        if($write_log) {
+            $server->writeLog($command . "\r\n");
+        }
+
         if(substr($command, 0, 4) == 'new ') {
             list(, $queue, $max_items) = explode(' ', $command);
 

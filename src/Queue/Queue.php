@@ -10,13 +10,13 @@ class Queue implements QueueInterface, Countable {
      * the max count of the queue
      * @var int
      */
-    protected $max_items;
+    public $max_items;
 
     /**
      * the items in the queue
      * @var array
      */
-    protected $items = array();
+    public $items = array();
 
     /**
      * Queue constructor.
