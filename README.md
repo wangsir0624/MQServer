@@ -2,9 +2,13 @@
 PHP写的消息队列服务器，可以用来异步执行一些任务，比如发送邮件，短信之类的
 
 ### 安装
-需要通过composer包来进行安装
+1、通过composer包来进行安装
 <pre>composer create-project wangjian/mqserver mqserver *</pre>
 输入上面的命令，就可以下载到mqserver目录下
+2、下载phar包
+[点击下载phar包](https://github.com/wangsir0624/MQServer/blob/master/mqserver.phar?raw=true)
+<pre>php mqserver.phar [options] ip port</pre>
+输入如上命令，开启服务器
 
 ### 启动
 启动命令格式为
