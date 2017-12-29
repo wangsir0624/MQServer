@@ -56,6 +56,10 @@ class Server {
      */
     protected $log_fd;
 
+    protected $waitQueues = [];
+
+    protected $waitMap = [];
+
     /**
      * run the server
      */

@@ -18,7 +18,11 @@ class Processor {
         }
 
         if(substr($command, 0, 4) == 'new ') {
-            list(, $queue, $max_items) = explode(' ', $command);
+            $tokens = explode(' ', $command);
+            if(count($tokens) != 3) {
+                return 'wrong';
+            }
+            list(, $queue, $max_items) = $tokens;
 
             try {
                 $result = $server->queues->addQueue($queue, $max_items);
@@ -32,7 +36,11 @@ class Processor {
                 return 'not created';
             }
         } else if(substr($command, 0, 4) == 'del ') {
-            list(, $queue) = explode(' ', $command);
+            $tokens = explode(' ', $command);
+            if(count($tokens) != 2) {
+                return 'wrong';
+            }
+            list(, $queue) = $tokens;
 
             $result = $server->queues->removeQueue($queue);
 
@@ -42,7 +50,11 @@ class Processor {
                 return 'not deleted';
             }
         } else if(substr($command, 0, 7) == 'exists ') {
-            list(, $queue) = explode(' ', $command);
+            $tokens = explode(' ', $command);
+            if(count($tokens) != 2) {
+                return 'wrong';
+            }
+            list(, $queue) = $tokens;
 
             $result = $server->queues->existsQueue($queue);
 
@@ -52,7 +64,11 @@ class Processor {
                 return 'not exists';
             }
         } else if(substr($command, 0, 3) == 'in ') {
-            list(, $queue, $item, $top) = explode(' ', $command);
+            $tokens = explode(' ', $command);
+            if(count($tokens) != 4) {
+                return 'wrong';
+            }
+            list(, $queue, $item, $top) = $tokens;
 
             $queue = $server->queues->getQueue($queue);
             if(!$queue) {
@@ -67,6 +83,9 @@ class Processor {
             }
         } else if(substr($command, 0, 4) == 'out ') {
             $queues = explode(' ', substr($command, 4));
+            if(empty($queues)) {
+                return 'wrong';
+            }
 
             foreach($queues as $queue) {
                 $queue = $server->queues->getQueue($queue);
@@ -81,6 +100,25 @@ class Processor {
             }
 
             return 'nodata';
+        } else if(substr($command, 0, 5) == 'bout ') {
+            $queues = explode(' ', substr($command, 5));
+            if(empty($queues)) {
+                return 'wrong';
+            }
+
+            foreach($queues as $queue) {
+                $queue = $server->queues->getQueue($queue);
+                if($queue) {
+                    try {
+                        $result = $queue->unQueue();
+                        return "data $result";
+                    } catch (\UnderflowException $e) {
+                        continue;
+                    }
+                }
+            }
+
+            return '';
         } else {
             return 'wrong';
         }

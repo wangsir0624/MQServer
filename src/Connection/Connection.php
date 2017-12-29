@@ -109,7 +109,7 @@ class Connection implements ConnectionInterface {
             $buffer = substr($this->recv_buffer, 0, $length);
             $this->recv_buffer = substr($this->recv_buffer, $length);
 
-            $command = MQServerProtocol::decode($buffer, $this);
+            $command = trim(MQServerProtocol::decode($buffer, $this));
             $this->send(Processor::process($command, $this->server));
         }
     }
