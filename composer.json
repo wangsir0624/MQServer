@@ -23,7 +23,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Wangjian\\MQServer\\Test\\": "test"
+      "Wangjian\\MQServer\\Test\\": "tests"
     }
   }
 }

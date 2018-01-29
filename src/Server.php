@@ -128,8 +128,10 @@ EOT;
     }
 
     public function __destruct() {
-        flock($this->fd, LOCK_UN);
-        fclose($this->fd);
+        if(is_resource($this->log_fd)) {
+            flock($this->log_fd, LOCK_UN);
+            fclose($this->log_fd);
+        }
     }
 
     /**
@@ -192,7 +194,7 @@ EOT;
      * @return int  the writen bytes
      */
     public function writeLog($log) {
-        return fwrite($this->fd, $log, strlen($log));
+        return fwrite($this->log_fd, $log, strlen($log));
     }
 
     /**
@@ -241,7 +243,7 @@ EOT;
         if(!$fd) {
             throw new \RuntimeException('failed to open '.realpath($this->log_file));
         }
-        $this->fd = $fd;
-        flock($this->fd, LOCK_EX);
+        $this->log_fd = $fd;
+        flock($this->log_fd, LOCK_EX);
     }
 }
