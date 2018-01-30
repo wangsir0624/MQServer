@@ -1,5 +1,6 @@
 {
   "name": "wangjian/mqserver",
+  "type": "project",
   "description": "PHP写的消息队列服务器",
   "license": "MIT",
   "keywords": ["MQ", "Message Queue"],
