@@ -6,3 +6,4 @@ php:
 
 before_script:
   - composer install
+  - php ./tests/stubs/mockserver.php &

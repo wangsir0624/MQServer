@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 use Wangjian\MQServer\Server;
 use Wangjian\MQServer\Protocol\Processor;
 
-class ProcessorTest extends TestCase {
+class ProcessorTest1 extends TestCase {
     protected $server;
 
     public function setUp() {

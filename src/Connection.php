@@ -60,9 +60,14 @@ class Connection
      * @return self
      * @throws Exception
      */
-    public static function accept($stream, $timeout = 5)
+    public static function accept($stream, $timeout = 0)
     {
-        $stream = stream_socket_accept($stream, $timeout);
+        if($timeout > 0) {
+            $stream = stream_socket_accept($stream, $timeout);
+        } else {
+            $stream = stream_socket_accept($stream);
+        }
+
         if(!is_resource($stream)) {
             throw new Exception('stream_socket_server() failed');
         }
