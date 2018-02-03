@@ -2,7 +2,7 @@
 namespace Wangjian\MQServer\Test;
 
 use PHPUnit\Framework\TestCase;
-use Wangjian\MQServer\Connection;
+use Wangjian\MQServer\Connection\Connection;
 
 class ConnectionTest extends TestCase
 {

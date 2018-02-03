@@ -1,140 +1,253 @@
 <?php
 namespace Wangjian\MQServer\Connection;
 
-use Wangjian\MQServer\EventLoop\EventLoopInterface;
-use RuntimeException;
-use Wangjian\MQServer\Protocol\MQServerProtocol;
-use Wangjian\MQServer\Protocol\Processor;
+use InvalidArgumentException;
+use Wangjian\Foundation\EventLoop\EventLoopInterface;
+use Exception;
 
-class Connection implements ConnectionInterface {
+class Connection
+{
     /**
-     * the connection socket stream
+     * watch mode constants
+     * @const int
+     */
+    const WATCH_READ = 1;
+    const WATCH_WRITE = 2;
+
+    /**
+     * resource handler
      * @var resource
      */
-    public $stream;
+    protected $stream;
 
     /**
-     * the server which this connection belongs to
-     * @var ServerInterface
+     * whether the connection is closed
+     * @var bool
      */
-    public $server;
+    protected $closed = false;
 
     /**
-     * receive buffer
-     * @var string
+     * private constructor
      */
-    public $recv_buffer = '';
-
-    /**
-     * receive buffer size
-     * @var int
-     */
-    public $recv_buffer_size = 1048576;
-
-    /*
-     * the receiving time of the last message
-     * @var int
-     */
-    public $last_time;
-
-    /**
-     * constructor
-     * @param ServerInterface $server
-     */
-    public function __construct($server) {
-        $this->server = $server;
-        $this->stream = @stream_socket_accept($this->server->stream, $this->server->connectionTimeout, $peername);
-
-        if(!$this->stream) {
-            throw new RuntimeException('stream_socket_accept() failed');
-        }
-
-        $this->last_time = time();
-        stream_set_read_buffer($this->stream, 0);
+    private function __construct()
+    {
     }
 
     /**
-     * send message to the client
-     * @param sting buffer
-     * @param string $raw  whether encode the buffer with the protocol
-     * @return int the length of send data
+     * connect to a server
+     * @param string $remoteSocket  the server host
+     * @param int $timeout  the connect timeout
+     * @return self
+     * @throws Exception
      */
-    public function send($buffer, $raw = false) {
-        if($buffer) {
-            if(!$raw) {
-                $buffer = MQServerProtocol::encode($buffer, $this);
-            }
-
-            $len = strlen($buffer);
-            $writeLen = 0;
-            while (($data = fwrite($this->stream, substr($buffer, $writeLen), $len - $writeLen)) !== false) {
-                $writeLen += $data;
-                if ($writeLen >= $len) {
-                    break;
-                }
-            }
-
-            return $writeLen;
+    public static function connect($remoteSocket, $timeout = 5)
+    {
+        $stream = stream_socket_client($remoteSocket, $errno, $errstr, $timeout);
+        if(!is_resource($stream)) {
+            throw new Exception('stream_socket_client() failed: ' . $errstr, $errno);
         }
 
-        return 0;
+        $connection = new self();
+        $connection->stream = $stream;
+
+        return $connection;
+    }
+
+    /**
+     * accept a connection from a server socket
+     * @param resource $stream  server socket
+     * @param int $timeout  the connection timeout
+     * @return self
+     * @throws Exception
+     */
+    public static function accept($stream, $timeout = 0)
+    {
+        if($timeout > 0) {
+            $stream = @stream_socket_accept($stream, $timeout);
+        } else {
+            $stream = @stream_socket_accept($stream);
+        }
+
+        if(!is_resource($stream)) {
+            throw new Exception('stream_socket_server() failed');
+        }
+
+        $connection = new self();
+        $connection->stream = $stream;
+
+        return $connection;
+    }
+
+    /**
+     * read data from connection
+     * @param int $length  max length
+     * @return string
+     */
+    public function read($length)
+    {
+        return fread($this->stream, $length);
+    }
+
+    /**
+     * write data to connection
+     * @param string $buffer
+     * @param int $length
+     * @return int
+     */
+    public function write($buffer, $length = null)
+    {
+        return fwrite($this->stream, $buffer, is_null($length) ? strlen($buffer) : $length);
+    }
+
+    /**
+     * watch the connection for read/write event
+     * @param EventLoopInterface $loop
+     * @param callable $callback
+     * @param array $args
+     * @param int $mode
+     * @return bool
+     */
+    public function watch(EventLoopInterface $loop, callable $callback, $args = [], $mode = self::WATCH_READ | self::WATCH_WRITE)
+    {
+        if(($mode & self::WATCH_READ) == self::WATCH_READ) {
+            $loop->add($this->stream, EventLoopInterface::EV_READ, $callback, $args);
+        }
+
+        if(($mode & self::WATCH_WRITE) == self::WATCH_WRITE) {
+            $loop->add($this->stream, EventLoopInterface::EV_WRITE, $callback, $args);
+        }
+
+        return true;
     }
 
     /**
      * close the connection
+     * @return bool
      */
-    public function close() {
-        $this->server->connections->detach($this);
-
-        $this->server->loop->delete($this->stream, EventLoopInterface::EV_READ);
-
-        fclose($this->stream);
-    }
-
-    /**
-     * called when the connection receive the client data
-     */
-    public function handleMessage() {
-        $this->last_time = time();
-
-        $buffer = fread($this->stream, $this->recv_buffer_size);
-
-        if(!$buffer) {
-            $this->close();
+    public function close()
+    {
+        if($result = fclose($this->stream)) {
+            $this->closed = true;
         }
 
-        $this->recv_buffer .= $buffer;
+        return $result;
+    }
 
-        if(($length = MQServerProtocol::input($this->recv_buffer, $this)) != 0) {
-            $buffer = substr($this->recv_buffer, 0, $length);
-            $this->recv_buffer = substr($this->recv_buffer, $length);
 
-            $command = trim(MQServerProtocol::decode($buffer, $this));
-            $this->send(Processor::process($command, $this->server));
+    public function __destruct()
+    {
+        if(!$this->closed) {
+            fclose($this->stream);
         }
     }
 
     /**
-     * get the client address, including IP and port
+     * set the I/O buffer size, including read buffer and write buffer
+     * @param int $buffer
+     * @return bool
+     */
+    public function setBuffer($buffer)
+    {
+        return $this->setReadBuffer($buffer) && $this->setWriteBuffer($buffer);
+    }
+
+    /**
+     * set the read buffer size
+     * @param int $buffer
+     * @return bool
+     */
+    public function setReadBuffer($buffer)
+    {
+        return stream_set_read_buffer($this->stream, $buffer) === 0;
+    }
+
+    /**
+     * set the write buffer size
+     * @param int $buffer
+     * @return bool
+     */
+    public function setWriteBuffer($buffer)
+    {
+        return stream_set_write_buffer($this->stream, $buffer) === 0;
+    }
+
+    /**
+     * set blocking
+     * @return bool
+     */
+    public function setBlocking()
+    {
+        return stream_set_blocking($this->stream, 1);
+    }
+
+    /**
+     * set none blocking
+     * @return bool
+     */
+    public function setNoneBlocking()
+    {
+        return stream_set_blocking($this->stream, 0);
+    }
+
+    /**
+     * get the local address
      * @return string
      */
-    public function getRemoteAddress() {
+    public function getLocalAddress()
+    {
+        return stream_socket_get_name($this->stream, false);
+    }
+
+    /**
+     * get the local ip
+     * @return string
+     */
+    public function getLocalIp()
+    {
+        list($ip, ) = explode(':', $this->getLocalAddress(), 2);
+
+        return $ip;
+    }
+
+    /**
+     * get the local port
+     * @return int
+     */
+    public function getLocalPort()
+    {
+        list(, $port) = explode(':', $this->getLocalAddress(), 2);
+
+        return (int)$port;
+    }
+
+    /**
+     * get the remote address
+     * @return string
+     */
+    public function getRemoteAddress()
+    {
         return stream_socket_get_name($this->stream, true);
     }
 
     /**
-     * get the client IP
+     * get the remote ip
      * @return string
      */
-    public function getRemoteIp() {
-        return substr($this->getRemoteAddress(), 0, strpos($this->getRemoteAddress(), ':'));
+    public function getRemoteIp()
+    {
+        list($ip, ) = explode(':', $this->getRemoteAddress(), 2);
+
+        return $ip;
     }
 
     /**
-     * get the client port
-     * @return string
+     * get the remote port
+     * @return int
      */
-    public function getRemotePort() {
-        return substr($this->getRemoteAddress(), strpos($this->getRemoteAddress(), ':')+1);
+    public function getRemotePort()
+    {
+        list(, $port) = explode(':', $this->getRemoteAddress(), 2);
+
+        return (int)$port;
     }
 }

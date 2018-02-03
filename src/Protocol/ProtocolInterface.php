@@ -1,8 +1,6 @@
 <?php
 namespace Wangjian\MQServer\Protocol;
 
-use Wangjian\MQServer\Connection\ConnectionInterface;
-
 interface ProtocolInterface {
     /**
      * get the protocol message length

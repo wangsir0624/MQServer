@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/../../vendor/autoload.php';
 
-use Wangjian\MQServer\Connection;
+use Wangjian\MQServer\Connection\Connection;
 
 $server = stream_socket_server('tcp://127.0.0.1:8888');
 if(!$server) {
