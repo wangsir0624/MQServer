@@ -24,6 +24,7 @@ class ConnectionTest extends TestCase
 
     public function testRemote()
     {
+        $this->connection->write('Hello World');
         $this->assertEquals('127.0.0.1:8888', $this->connection->getRemoteAddress());
         $this->assertEquals('127.0.0.1', $this->connection->getRemoteIp());
         $this->assertEquals(8888, $this->connection->getRemotePort());

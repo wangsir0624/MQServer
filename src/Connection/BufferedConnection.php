@@ -15,13 +15,13 @@ class BufferedConnection implements BufferInterface
      * the read buffer
      * @var string
      */
-    protected $buffer;
+    protected $buffer = '';
 
     /**
      * previously read byte
      * @var int
      */
-    protected $previousByte;
+    protected $previousByte = null;
 
     /**
      * BufferedConnection constructor
@@ -30,7 +30,6 @@ class BufferedConnection implements BufferInterface
     public function __construct(Connection $connection)
     {
         $this->connection = $connection;
-        $this->buffer = '';
     }
 
     /**

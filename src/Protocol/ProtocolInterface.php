@@ -1,28 +1,19 @@
 <?php
 namespace Wangjian\MQServer\Protocol;
 
-interface ProtocolInterface {
+interface ProtocolInterface
+{
     /**
-     * get the protocol message length
-     * @param string $buffer
-     * @param ConnectionInterface $connection
-     * @return int
+     * decode the protocol message
+     * @param BufferInterface $buffer
+     * @return bool|mixed  return false on failure
      */
-    public static function input($buffer, ConnectionInterface $connection);
+    public function decode(BufferInterface $buffer);
 
     /**
-     * encode
-     * @param string $buffer
-     * @param ConnectionInterface $connection
+     * encode data to protocol message
+     * @param mixed $raw
      * @return string
      */
-    public static function encode($buffer, ConnectionInterface $connection);
-
-    /**
-     * decode
-     * @param string $buffer
-     * @param ConnectionInterface $connection
-     * @return mixed  returns the original data
-     */
-    public static function decode($buffer, ConnectionInterface $connection);
+    public function encode($raw);
 }

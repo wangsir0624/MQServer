@@ -1,42 +1,31 @@
 <?php
 namespace Wangjian\MQServer\Protocol;
 
-use Wangjian\MQServer\Connection\ConnectionInterface;
 
 class MQServerProtocol implements ProtocolInterface {
     /**
-     * get the protocol message length
-     * @param string $buffer
-     * @param ConnectionInterface $connection
-     * @return int  returns the frame length when the buffer is ready. Notice: when the buffer is not ready and should wait for more data, returns 0
+     * decode the protocol message
+     * @param BufferInterface $buffer
+     * @return bool|mixed  return false on failure
      */
-    public static function input($buffer, ConnectionInterface $connection) {
-        if(($pos = strpos($buffer, "\r\n")) !== false) {
-            return $pos + 2;
+    public function decode(BufferInterface $buffer)
+    {
+        $data = $buffer->peek($buffer->buffered(), false);
+
+        if(($pos = strpos($data, "\r\n")) !== false) {
+            return rtrim($buffer->read($pos + 2, false), "\r\n");
         } else {
-            return 0;
+            return false;
         }
     }
 
     /**
-     * encode
-     * @param string $buffer
-     * @param ConnectionInterface $connection
-     * @return string  returns the encoded buffer
+     * encode data to protocol message
+     * @param mixed $raw
+     * @return string
      */
-    public static function encode($buffer, ConnectionInterface $connection) {
-        return $buffer."\r\n";
-    }
-
-    /**
-     * decode
-     * @param string $buffer
-     * @param ConnectionInterface $connection
-     * @return string  returns the original data
-     */
-    public static function decode($buffer, ConnectionInterface $connection) {
-        $data = rtrim($buffer, "\r\n");
-
-        return $data;
+    public function encode($raw)
+    {
+        return $raw."\r\n";
     }
 }
